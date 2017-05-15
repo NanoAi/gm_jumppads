@@ -210,6 +210,13 @@ function ENT:LaunchArc(pos, pos2, time, t)	-- target, starting point, time to ge
 	return pos2 + Vector(x, y, z)
 end
 
+hook.Add("GetFallDamage", "hv_jumppad", function(target, speed)
+	if target.hv_jumppad_launch then
+		target.hv_jumppad_launch = nil
+		return 0
+	end
+end)
+
 function ENT:StartTouch( entity )
 
 	if !self:GetEnabled() then return end		// Don't do anything if turned off
@@ -232,8 +239,17 @@ function ENT:StartTouch( entity )
 		if !entity:IsPlayer() and !entity:IsNPC() and entphys:IsValid() then
 			entphys:SetVelocity(self:getvel(targetpos, entity:GetPos(), self:GetHeightAdd()))
 		else
-			if entity:IsPlayer() and self:GetNoFallDamage() then
-				entity:Fire("ignorefalldamage","",0)
+			if entity:IsPlayer() then
+				if self:GetNoFallDamage() then
+					entity:Fire("ignorefalldamage","",0)
+				end
+
+				entity.hv_jumppad_launch = true
+				timer.Simple(0, function()
+					if IsValid(entity) and entity.hv_jumppad_launch then 
+						entity.hv_jumppad_launch = nil
+					end 
+				end)
 			end
 			entity:SetLocalVelocity(self:getvel(targetpos, entity:GetPos(), self:GetHeightAdd()))
 //			entity:SetLocalVelocity(self:getvel(self.target:GetPos(), entity:GetPos(), self.HightAdd))

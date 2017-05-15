@@ -10,8 +10,13 @@ function EFFECT:Init( data )
 	self.velocity = data:GetStart()
 	self.angle = self.velocity:Angle()-- data:GetAngles()
 	self.jumppad = data:GetEntity()
-	self.color = self.jumppad:GetEffectColor()*255 or Vector(255, 170, 0)
-		
+
+	if not IsValid(self.jumppad) then
+		SafeRemoveEntity(self)
+		return
+	end
+
+	self.color = self.jumppad:GetEffectColor()*255 or Vector(255, 170, 0)	
 	self.Emitter = ParticleEmitter(self.pos)	
 	self.DieTime = CurTime() + 0.3
 	

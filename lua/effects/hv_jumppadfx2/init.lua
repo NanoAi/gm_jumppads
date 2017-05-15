@@ -10,6 +10,12 @@ function EFFECT:Init( data )
 	self.velocity = data:GetStart()
 	self.angle = self.velocity:Angle()-- data:GetAngles()
 	self.jumppad = data:GetEntity()
+
+	if not IsValid(self.jumppad) then
+		SafeRemoveEntity(self)
+		return
+	end
+
 	self.color = self.jumppad:GetEffectColor()*255 or Vector(255, 170, 0)
 	self.gravity = -GetConVarNumber( "sv_gravity")
 	self.pDieTime = self.velocity:Length()/1000

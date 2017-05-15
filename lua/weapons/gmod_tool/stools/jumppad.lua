@@ -1,6 +1,6 @@
 
-TOOL.Category = "HighVoltage"
-TOOL.Name = "Jumppad spawner"
+TOOL.Category = "Construction"
+TOOL.Name = "Jumppad Spawner"
 
 TOOL.ClientConVar[ "model" ] = "models/HighVoltage/UT2K4/PickUps/Jump_pad.mdl"
 TOOL.ClientConVar[ "keygroup" ] = 0
