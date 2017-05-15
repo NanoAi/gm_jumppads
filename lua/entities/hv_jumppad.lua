@@ -212,7 +212,6 @@ end
 
 hook.Add("GetFallDamage", "hv_jumppad", function(target, speed)
 	if target.hv_jumppad_launch then
-		target.hv_jumppad_launch = nil
 		return 0
 	end
 end)
@@ -245,6 +244,7 @@ function ENT:StartTouch( entity )
 				end
 
 				entity.hv_jumppad_launch = true
+
 				timer.Simple(0, function()
 					if IsValid(entity) and entity.hv_jumppad_launch then 
 						entity.hv_jumppad_launch = nil
