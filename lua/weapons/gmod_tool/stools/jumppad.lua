@@ -18,7 +18,7 @@ CreateConVar("sbox_maxjumppads", "10", FCVAR_ARCHIVE, "Maximum jumppads a single
 
 if CLIENT then
 	language.Add( "tool.jumppad.name", "Jumppad spawner" )
-	language.Add( "tool.jumppad.0", "Left click to spawn, right click to spawn it welded." )
+	language.Add( "tool.jumppad.0", "Left click to spawn, Right Click to spawn it welded, Reload to replace a prop." )
 	language.Add( "tool.jumppad.1", "Left click to set the landing position, right click to set an entity as landing position." )
 	language.Add( "tool.jumppad.desc", "Spawn jumppads and then set their landing position" )
 	language.Add( "tool.jumppad.hightadd", "Extra height" )
@@ -67,7 +67,7 @@ end
 
 cleanup.Register( "jumppads" )
 
-function TOOL:LeftClick( trace )
+function TOOL:LeftClick( trace, model, pos, angs )
 	
 	if self:GetStage() == 0 then
 		if ( IsValid( trace.Entity ) && trace.Entity:IsPlayer() ) then return false end
@@ -76,7 +76,7 @@ function TOOL:LeftClick( trace )
 		
 		local ply = self:GetOwner()
 		
-		local model = 		self:GetClientInfo( "model" )
+		local model = 		model or self:GetClientInfo( "model" )
 		local key = 		self:GetClientNumber( "keygroup" )
 		local key2 = 		self:GetClientNumber( "keygroup2" )
 		local hightadd = 	self:GetClientNumber( "hightadd" )
@@ -122,7 +122,7 @@ function TOOL:LeftClick( trace )
 		local Ang = trace.HitNormal:Angle()
 		Ang.pitch = Ang.pitch + 90
 
-		local jumppad = MakeJumppad( ply, model, Ang, trace.HitPos, key, key2, hightadd, enabled, nofalldmg, color, soundname, effectname )
+		jumppad = MakeJumppad( ply, model, angs or Ang, pos or trace.HitPos, key, key2, hightadd, enabled, nofalldmg, color, soundname, effectname )
 		
 		local min = jumppad:GetCollisionBounds()
 		jumppad:SetPos( trace.HitPos - trace.HitNormal * min.z )
@@ -148,6 +148,37 @@ function TOOL:LeftClick( trace )
 		return true
 	end
 
+end
+
+function TOOL:Reload( trace )
+	if self:GetStage() == 0 and IsValid(trace.Entity) and trace.Entity:GetClass() == "prop_physics" then
+		local model = trace.Entity:GetModel()
+		local pos = trace.Entity:GetPos()
+		local ang = trace.Entity:GetAngles()
+
+
+		if SERVER then
+			SafeRemoveEntity(trace.Entity)
+		end
+
+		print(model, pos, ang)
+
+		local _, ent = self:LeftClick( trace, model, pos, ang )
+
+		timer.Simple(0, function()
+			if not IsValid(ent) then return end
+
+			local phys = ent:GetPhysicsObject()
+			if IsValid(phys) then phys:EnableMotion(false) end
+
+			ent:SetPos(pos)
+			ent:SetAngles(ang)
+		end)
+
+		return true
+	else
+		return false
+	end
 end
 
 function TOOL:RightClick( trace )
