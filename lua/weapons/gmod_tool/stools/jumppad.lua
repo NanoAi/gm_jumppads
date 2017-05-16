@@ -10,7 +10,6 @@ TOOL.ClientConVar[ "r" ] = 255
 TOOL.ClientConVar[ "g" ] = 170
 TOOL.ClientConVar[ "b" ] = 0
 TOOL.ClientConVar[ "a" ] = 255
-TOOL.ClientConVar[ "nofalldamage" ] = "0"
 TOOL.ClientConVar[ "enabled" ] = "1"
 TOOL.ClientConVar[ "updatepos" ] = "0"
 TOOL.ClientConVar[ "soundname" ] = "HV_Jump_pad_launch.wav"
@@ -25,8 +24,6 @@ if CLIENT then
 	language.Add( "tool.jumppad.hightadd", "Extra height" )
 	language.Add( "tool.jumppad.hightadd.help", "This is roughly the time you are in the air before hitting the target." )
 	language.Add( "tool.jumppad.color", "The color of the effect" )
-	language.Add( "tool.jumppad.falldmg", "Disable fall damage." )
-	language.Add( "tool.jumppad.falldmg.help", "This prevents the next fall damage on the player, even if they land without damage." )
 	language.Add( "tool.jumppad.enabled", "Start enabled" )
 	language.Add( "tool.jumppad.enabled.help", "Jumpads can be toggled from the context menu or by keypress" )
 	language.Add( "tool.jumppad.key", "Toggle key" )
@@ -64,6 +61,8 @@ if CLIENT then
 	language.Add( "jumppadeffects.dots", "Default" )
 	language.Add( "jumppadeffects.streaks", "Streaks" )
 	language.Add( "jumppadeffects.bubbles", "Bubbly" )
+	language.Add( "jumppadeffects.pulse", "Pulse" )
+	language.Add( "jumppadeffects.none", "None" )
 end
 
 cleanup.Register( "jumppads" )
@@ -86,7 +85,6 @@ function TOOL:LeftClick( trace )
 		local b = 			self:GetClientNumber( "b" )
 		local a = 			self:GetClientNumber( "a" )
 		local color = Vector(r,g,b)/255
-		local nofalldmg =self:GetClientNumber( "nofalldamage" ) == 1
 		local enabled = 	self:GetClientNumber( "enabled" )	== 1
 		local updatepos = 	self:GetClientNumber( "updatepos" )	== 1
 		local soundname  = 	self:GetClientInfo( "soundname" )
@@ -99,10 +97,10 @@ function TOOL:LeftClick( trace )
 			if key != 0 then
 				trace.Entity.NumDown = numpad.OnDown( ply, key, "JumpToggle", jumppad )
 			end
+
 			trace.Entity:SetKey(key2)
 			trace.Entity:SetHeightAdd( hightadd )
 			trace.Entity:SetEnabled( enabled )
-			trace.Entity:SetNoFallDamage( nofalldmg )
 			trace.Entity:SetEffectColor( color )
 			trace.Entity:SetSoundName(soundname)
 			trace.Entity:SetEffectName(effectname)
@@ -320,9 +318,6 @@ if ( SERVER ) then
 		if enabled then
 			jumppad:SetEnabled( enabled )
 		end
-		if nofalldmg then
-			jumppad:SetNoFallDamage( nofalldmg )
-		end
 		if effect_col then
 			jumppad:SetEffectColor( effect_col )
 		end
@@ -472,13 +467,11 @@ function TOOL:Think()
 		local b = 			self:GetClientNumber( "b" )
 		local a = 			self:GetClientNumber( "a" )
 		local color = Vector(r,g,b)/255
-		local nofalldmg =self:GetClientNumber( "nofalldamage" ) == 1
 		local enabled = 	self:GetClientNumber( "enabled" )	== 1
 		local soundname = 	self:GetClientInfo( "soundname" )
 		local effectname = 	self:GetClientInfo( "effect" )
 		jumppad:SetHeightAdd( hightadd )
 		jumppad:SetEnabled( enabled )
-		jumppad:SetNoFallDamage( nofalldmg )
 		jumppad:SetEffectColor( color )
 		jumppad:SetSoundName(soundname)
 		jumppad:SetEffectName(effectname)
@@ -498,8 +491,6 @@ function TOOL.BuildCPanel( CPanel )
 	-- effect color
 	CPanel:AddControl( "Color", { Label = "#tool.jumppad.color", Red = "jumppad_r", Green = "jumppad_g", Blue = "jumppad_b", Alpha = "jumppad_a" } )
 	-- start enabled
-	CPanel:AddControl( "CheckBox", { Label = "#tool.jumppad.falldmg", Command = "jumppad_nofalldamage", Help = true } )
-	-- disable fall damage
 	CPanel:AddControl( "CheckBox", { Label = "#tool.jumppad.enabled", Command = "jumppad_enabled", Help = true } )
 	-- numpad toggle
 --	CPanel:AddControl( "Numpad", { Label = "#tool.jumppad.key", Command = "jumppad_keygroup" } )
@@ -540,6 +531,8 @@ list.Set( "LaunchSounds", "#jumppadsounds.physcannon", { jumppad_soundname = "We
 list.Set( "JumpPadEffects", "#jumppadeffects.dots", { jumppad_effect = "hv_jumppadfx" } )
 list.Set( "JumpPadEffects", "#jumppadeffects.streaks", { jumppad_effect = "hv_jumppadfx2" } )
 list.Set( "JumpPadEffects", "#jumppadeffects.bubbles", { jumppad_effect = "hv_jumppadfx3" } )
+list.Set( "JumpPadEffects", "#jumppadeffects.pulse", { jumppad_effect = "selection_indicator" } )
+list.Set( "JumpPadEffects", "#jumppadeffects.none", { jumppad_effect = "" } )
 
 properties.Add( "jumppad_off", {
 	MenuLabel = "#jumppad_off",

@@ -54,7 +54,6 @@ function ENT:Initialize()
 	end
 --[[	if !self:CreatedByMap() then
 		self:SetTargetPos(self:GetPos())
-		self:SetNoFallDamage(false)
 	end--]]
 	if self:HasSpawnFlags(1) then
 		self:SetMoveType( MOVETYPE_NONE )
@@ -120,7 +119,6 @@ function ENT:SpawnFunction( ply, tr, ClassName )
 	ent:Activate()
 	
 	ent:SetTargetPos(ent:GetPos())
-	ent:SetNoFallDamage(false)
 	ent:SetHeightAdd( 1 )
 	ent:SetEffectColor( Vector(255, 170, 0)/255 )
 	ent:SetEnabled( true )
@@ -152,6 +150,13 @@ function ENT:OnTargetChanged(var,old,new)
 	self:SetTargetType(_type)
 end
 
+local expectedEffects = {
+	["hv_jumppadfx"] = 0.1,
+	["hv_jumppadfx2"] = 0.1,
+	["hv_jumppadfx3"] = 0.1,
+	["selection_indicator"] = 0.5,
+}
+
 function ENT:Think()
 	if ( CLIENT ) then return end
 	if self.LastLaunch and CurTime() > self.LastLaunch + 0.2 then
@@ -161,7 +166,14 @@ function ENT:Think()
 	self.LastEffect = self.LastEffect or 0
 	if CurTime() > self.LastEffect then
 		self.LastEffect = CurTime() + 0.1
+		
 		if !self:GetEnabled() then return end		// Don't do anything if turned off
+
+		local effectname = self:GetEffectName()
+		if effectname == "" or not expectedEffects[effectname] then return end
+
+		self.LastEffect = CurTime() + expectedEffects[effectname]
+
 		local targetpos = self:GetPos()//Vector(0,0,0)
 		if self:GetTargetType() == "string" and ents.FindByName(self:GetTargetName())[1] and ents.FindByName(self:GetTargetName())[1]:IsValid() then
 			targetpos = ents.FindByName(self:GetTargetName())[1]:GetPos()
@@ -173,6 +185,7 @@ function ENT:Think()
 			targetpos = self:GetTargetPos()-- There should always be a old targetpos we can revert to
 			--ErrorNoHalt('Your trying to set a "'..self:GetTargetType()..'" as the target, instead of a vector, valid entity, or entity name.\n')
 		end
+
 		local col = self:GetEffectColor()
 		--debugoverlay.Cross( targetpos, 4, 0.22, Color(col.r,col.g,col.b), true )
 		debugoverlay.Cross( targetpos, 8, 0.22, Color(0,255,0), true )
@@ -183,7 +196,7 @@ function ENT:Think()
 		effectdata:SetStart( self:getvel(targetpos, self:GetPos(), self:GetHeightAdd()) )
 		effectdata:SetEntity( self )
 		--effectdata:SetNormal( col )
-		util.Effect( self:GetEffectName(), effectdata ) --"hv_jumppadfx"
+		util.Effect( effectname, effectdata ) --"hv_jumppadfx"
 	end
 end
 
@@ -216,18 +229,6 @@ hook.Add("GetFallDamage", "hv_jumppad", function(target)
 	end
 end)
 
-hook.Add("Move", "hv_jumppad", function(ply, data)
-	if ply.hv_jumppad_ignorefalldamage then
-		local plyOnGround = ply:OnGround()
-		if data:GetVelocity().z < -600 and not plyOnGround then
-			ply.hv_jumppad_ignorefalldamage = nil
-			ply:Fire("ignorefalldamage","",0)
-		elseif ply.hv_jumppad_ignorefalldamage < CurTime() and plyOnGround then
-			ply.hv_jumppad_ignorefalldamage = nil
-		end
-	end
-end)
-
 function ENT:StartTouch( entity )
 
 	if !self:GetEnabled() then return end		// Don't do anything if turned off
@@ -251,12 +252,7 @@ function ENT:StartTouch( entity )
 			entphys:SetVelocity(self:getvel(targetpos, entity:GetPos(), self:GetHeightAdd()))
 		else
 			if entity:IsPlayer() then
-				if self:GetNoFallDamage() then
-					entity.hv_jumppad_ignorefalldamage = CurTime()+1
-				end
-
 				entity.hv_jumppad_launch = true
-
 				timer.Simple(0, function()
 					if IsValid(entity) and entity.hv_jumppad_launch then 
 						entity.hv_jumppad_launch = nil
@@ -350,9 +346,7 @@ function ENT:TriggerInput(iname, value)
 	elseif (iname == "RGB") then
 		self:SetEffectColor( Vector( math.Clamp(value[1],0,255), math.Clamp(value[2],0,255), math.Clamp(value[3],0,255) )/255 )
 	elseif (iname == "Height_Add") then
-		self:SetHeightAdd(value)	
-	elseif (iname == "NoFallDmg") then
-		self:SetNoFallDamage(tobool(value))	
+		self:SetHeightAdd(value)		
 	elseif (iname == "Sound") then
 		self:SetSoundName(value)	
 	elseif (iname == "On") then
